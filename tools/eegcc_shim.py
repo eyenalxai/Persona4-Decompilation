@@ -195,8 +195,11 @@ def _asm_block(path: Path) -> list[str]:
 
 # MWCC's inline-assembly function definition, used in this codebase for
 # syscall wrappers and other hand-written ABI code.  GCC has no equivalent
-# construct, so the body is re-emitted as file-scope assembly.
-ASM_FUNCTION = re.compile(r"^asm\s+(?:\w+\s+)*?\**(\w+)\s*\(")
+# construct, so the body is re-emitted as file-scope assembly.  The declarator
+# may carry pointer stars with either spacing (`asm u8 *func(` and
+# `asm u8 * func(` both occur), so match lazily up to the `(` and take the
+# identifier immediately before it.
+ASM_FUNCTION = re.compile(r"^asm\s+[^(]*?(\w+)\s*\(")
 
 
 def _asm_function(name: str, body: list[str]) -> list[str]:

@@ -51,3 +51,10 @@ src/promoted/code2_0070.c
 
 # Isolated fp-bit runtime conversion; do not switch its mixed original unit.
 src/middleware/gcc_fp.c
+
+# CRI ADX group (2,826 functions).  A whole-unit screen of the remaining C
+# pool under ee-gcc 2.96 found 754 exact drafts against 66 MWCC-only
+# spellings; the 66 were split out into the MWCC companion
+# src/cri/cri_adx_mwcc.c, which verifies independently.  Net +754 with no
+# MWCC body lost.
+src/cri/cri_adx_grouped.c

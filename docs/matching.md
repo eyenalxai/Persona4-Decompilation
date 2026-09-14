@@ -12079,3 +12079,60 @@ objects**. `func_00260020` is the only matching-status transition;
 `cldScheduler` has **four MATCH / zero ASM**. Both identities remain
 exact: loadable image `3d1d3d2b9d6ccb60836db239ab49674223025a78`;
 complete ELF `4eeec0360cf2715535d9f7e52eb69d786fb0158c`.
+
+## CRI ADX: the ee-gcc 2.96 unit and the MWCC holdout split
+
+`src/cri/cri_adx_grouped.c` is now listed in `config/gcc_units.txt`. The whole
+2,826-function unit was measured under ee-gcc 2.96 at `-O2 -G0` first: 562
+functions already reproduced retail as-is, and a scratch-TU screen of the
+remaining bodies found **754 byte-exact drafts**. They are landed, and the
+unit verifies **1,316 MATCH / 1,510 ASM / 0 MISMATCH** under ee-gcc. Because
+the unit is a gcc unit, the build links its extracted retail bytes and needs no
+ee-gcc toolchain; `verify.py` compiles it with the configured shim only when
+the unit is requested explicitly.
+
+Sixty-six of the 754 drafts reproduce only under MWCC (16–40 B leaf spellings
+that ee-gcc allocates differently). They were **not** respelled to force the
+ee-gcc move: they were moved verbatim, each preserving its pragma state
+(21 × level-2/off, 28 × level-3/on, 17 × level-2/on), into the new
+**MWCC-compiled** companion `src/cri/cri_adx_mwcc.c`, which verifies
+**66 MATCH / 0 MISMATCH**. Splitting the unit this way keeps every landed body
+on the compiler that actually reproduces it and costs the first-party metric
+nothing, since all of CRI is third-party.
+
+Four measured ee-gcc behaviours made the in-file landing differ from the
+scratch screen. Each is a *declaration* effect, not a body effect:
+
+- **A function-pointer variable's declarator picks the indirect-call register
+  order.** For `D_007149F8(temp)`, `extern void (*D_007149F8)();` emits
+  `lui $v0, %hi; lw $v1, %lo($v0); jalr $v1` — retail's order. `int (*)()`
+  and `s32 (*)()` emit `lui $v1; lw $v0; jalr $v0`, which mismatches even
+  though the relocation masks both immediates. With a `void` result there is
+  no value to consume, so GCC picks the register retail picked. All 33
+  function-pointer variables in the unit are declared `void (*)()`; none of
+  their call sites uses a result.
+- **A callee prototype in scope rewrites the caller.** An `s16` load passed
+  to a `u16` parameter compiles to `andi $a1, $a1, 0xffff` (and drops the
+  callee-entry `sll`/`sra` pair), and an `s32` passed to a `u8` parameter
+  compiles to `andi $a1, $a1, 0xff`. Retail has neither, so the in-file
+  declaration was widened to the width the body needs. A store-only callee
+  (`*(u8 *)(object + 0x8c) = value;`) keeps identical bytes under a wider
+  parameter, because `sb` truncates anyway; the two wrappers that forward to
+  it then emit the bare `move` retail shows. `u16 x, y, z` triads became
+  `s16 x, y, z` for the two wrappers whose retail entry sign-extends them.
+- **Return width is a conversion instruction.** Declaring `u64
+  func_005287e8(...)` made its caller insert `dsll32`/`dsra32` around the
+  returned word; retail moves `$v0` straight into the saved register. The
+  declaration is 32-bit. The callee is `return 0;`, so its own bytes are
+  unchanged either way.
+- **Arity gaps are dropped pass-through arguments.** m2c omits an argument
+  that is already in its register (forwarding it emits no instruction), so a
+  body can be byte-exact in a scratch TU with an implicit declaration and
+  then fail arity in-file. Reconstruct the signature from the retail call
+  site: extend the caller with the pass-through parameters and forward them,
+  or, when the callee body never reads a supplied parameter, widen the
+  declaration. Both are codegen-neutral by construction; the 30 bodies that
+  needed this were landed the same way as the clean 712 and verify with the
+  rest. One corollary: a function-pointer variable called as `D_sym(...)`
+  must be declared as a pointer variable, not `u32 D_sym[]` — retail loads
+  it (`lui`/`lw`/`jalr`) and never takes its address.
