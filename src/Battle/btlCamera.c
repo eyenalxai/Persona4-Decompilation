@@ -11,6 +11,12 @@ struct RwV3d
     f32 z;
 };
 
+typedef struct RwV2d
+{
+    f32 x;
+    f32 y;
+} RwV2d;
+
 typedef struct RtQuat RtQuat;
 struct RtQuat
 {
@@ -114,6 +120,8 @@ extern f32 fGpffff8058;
 extern f32 fGpffff805c;
 extern f32 fGpffff8060;
 extern f32 fGpffff8108;
+extern f32 fGpffff80dc;
+extern f32 fGpffff8194;
 extern f32 fGpffff80e8;
 extern f32 fGpffff80d8[2];
 extern f32 fGpffff8110;
@@ -195,6 +203,13 @@ typedef struct BtlCameraKeyFrame
     RwV3d pos;  // 0x00
     RtQuat rot; // 0x0c
 } BtlCameraKeyFrame;
+typedef struct BtlCameraQuatBlend
+{
+    RtQuat first;  // 0x00
+    RtQuat second; // 0x10
+    f32 scalar;    // 0x20
+    s32 flag;      // 0x24
+} BtlCameraQuatBlend;
 void func_001bb3d0(void* camera, void* first, void* second, void* third, void* fourth, u16 mode);
 
 
@@ -1580,7 +1595,175 @@ void func_001cdaf0(u8 *camera)
     func_001bbef0(camera, 0.75f);
 }
 // FUN_001CDE50
-INCLUDE_ASM("asm/nonmatchings/btlCamera", func_001cde50);
+void func_001cde50(BtlCamera* camera)
+{
+    struct B41Work
+    {
+        BtlCameraKeyFrame current;
+        RwV3d target;
+        RtQuat targetRot;
+        u8 pad_38[8];
+        BtlCameraQuatBlend blend;
+        u8 pad_68[8];
+        RtQuat blendedRot;
+        u8 pad_80[8];
+        RwV2d horizontal;
+        RwV3d center;
+        u8 pad_9c[4];
+        RwV3d pointNear;
+        u8 pad_ac[4];
+        RwV3d delta;
+        u8 pad_bc[4];
+        RwV3d candidate;
+        u8 pad_cc[4];
+    } work;
+    BtlUnit* unit;
+    f32 halfDistance;
+    f32 desiredDistance;
+    f32 radius;
+    f32 angle;
+    f32 ratio;
+    f32 sideOffset;
+    f32 x;
+    f32 xSquared;
+    f32 cube;
+
+    unit = *(BtlUnit**)((u8*)camera->action + 0x30);
+    radius = unit->sphereRadius * unit->scale;
+    func_001bd560((f32*)&work.current, (f32*)((u8*)camera + 0x9c));
+    func_001958f0((s32)unit, &work.center);
+
+    work.delta.x = work.current.pos.x - work.center.x;
+    work.delta.y = work.current.pos.y - work.center.y;
+    work.delta.z = work.current.pos.z - work.center.z;
+    halfDistance = func_003e4180((f32 *)&work.delta);
+    halfDistance = halfDistance * 0.5f;
+    desiredDistance = (1.5f * radius) /
+                      func_0044b868(0.5f * camera->fovRad);
+
+    func_003dcb40(&work.delta, &D_0060A0F0, 1, &unit->rot);
+    x = 0.5f * radius;
+    work.candidate.x = work.delta.x * x;
+    work.candidate.y = work.delta.y * x;
+    work.candidate.z = work.delta.z * x;
+    work.pointNear.x = work.center.x + work.candidate.x;
+    work.pointNear.y = work.center.y + work.candidate.y;
+    work.pointNear.z = work.center.z + work.candidate.z;
+
+    work.candidate.x = work.delta.x * desiredDistance;
+    work.candidate.y = work.delta.y * desiredDistance;
+    work.candidate.z = work.delta.z * desiredDistance;
+    work.candidate.x = work.candidate.x + work.pointNear.x;
+    work.candidate.y = work.candidate.y + work.pointNear.y;
+    work.candidate.z = work.candidate.z + work.pointNear.z;
+    work.candidate.y = work.candidate.y +
+        fGpffff811c * (unit->unk_8c * unit->scale);
+
+    func_001bd780(&work.targetRot, &work.candidate,
+                 &work.pointNear, &D_0060A0E0);
+    angle = func_001ec2b0((f32*)&work.current.rot,
+                         (f32*)&work.targetRot);
+    if (angle > fGpffff80dc)
+    {
+        ratio = fGpffff80dc / angle;
+        func_003dcc70((f32*)&work.current.rot,
+                     (f32*)&work.targetRot,
+                     (f32*)&work.blend);
+        if (ratio <= 0.0f)
+        {
+            work.blendedRot = work.current.rot;
+        }
+        else if (1.0f <= ratio)
+        {
+            work.blendedRot = work.targetRot;
+        }
+        else
+        {
+            f32 firstWeight;
+
+            firstWeight = 1.0f - ratio;
+            if (work.blend.flag == 0)
+            {
+                x = firstWeight * work.blend.scalar;
+                xSquared = x * x;
+                cube = xSquared * x;
+                firstWeight = fGpffff8194 * xSquared + fGpffff8054;
+                firstWeight = xSquared * firstWeight + fGpffff8058;
+                firstWeight = xSquared * firstWeight + fGpffff805c;
+                firstWeight = xSquared * firstWeight + fGpffff8060;
+                firstWeight = xSquared * firstWeight + fGpffff8108;
+                firstWeight = cube * firstWeight + x;
+
+                x = ratio * work.blend.scalar;
+                xSquared = x * x;
+                ratio =
+                    xSquared * x *
+                    (xSquared *
+                     (xSquared *
+                      (xSquared *
+                       (xSquared *
+                        (fGpffff8194 * xSquared +
+                         fGpffff8054) +
+                        fGpffff8058) +
+                       fGpffff805c) +
+                      fGpffff8060) +
+                     fGpffff8108) +
+                    x;
+            }
+
+            work.blendedRot.x =
+                work.blend.first.x * firstWeight;
+            work.blendedRot.y =
+                work.blend.first.y * firstWeight;
+            work.blendedRot.z =
+                work.blend.first.z * firstWeight;
+            work.blendedRot.x = work.blendedRot.x +
+                work.blend.second.x * ratio;
+            work.blendedRot.y = work.blendedRot.y +
+                work.blend.second.y * ratio;
+            work.blendedRot.z = work.blendedRot.z +
+                work.blend.second.z * ratio;
+            work.blendedRot.w =
+                work.blend.first.w * firstWeight +
+                work.blend.second.w * ratio;
+        }
+
+        func_003dcb40(&work.delta, &D_0060A100, 1,
+                               &work.blendedRot);
+        work.candidate.x = work.pointNear.x + work.delta.x;
+        work.candidate.y = work.pointNear.y + work.delta.y;
+        work.candidate.z = work.pointNear.z + work.delta.z;
+        func_001bd780(&work.targetRot, &work.candidate,
+                     &work.pointNear, &D_0060A0E0);
+    }
+
+    if (halfDistance < 600.0f)
+    {
+        halfDistance = 600.0f;
+    }
+    func_003dcb40(&work.delta, &D_0060A100, 1,
+                           &work.targetRot);
+    work.delta.x *= halfDistance;
+    work.delta.y *= halfDistance;
+    work.delta.z *= halfDistance;
+
+    sideOffset = halfDistance *
+                 func_0044b868(DAT_00761200 *
+                              (0.5f * camera->fovRad));
+    sideOffset = sideOffset * 0.21875f;
+    work.horizontal.x = work.delta.x;
+    work.horizontal.y = work.delta.z;
+    func_003e41e0((f32*)&work.horizontal,
+                 (f32*)&work.horizontal);
+    work.pointNear.x += work.horizontal.y * sideOffset;
+    work.pointNear.z -= work.horizontal.x * sideOffset;
+
+    work.target.x = work.pointNear.x + work.delta.x;
+    work.target.y = work.pointNear.y + work.delta.y;
+    work.target.z = work.pointNear.z + work.delta.z;
+    func_001bac20((u16*)camera, (f32 *)&work.current.pos, (f32 *)&work.target, 1);
+    func_001bbef0((u8*)camera, 1.25f);
+}
 // FUN_001CE390
 void func_001ce390(u8 *arg0)
 {

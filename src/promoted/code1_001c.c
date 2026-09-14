@@ -30,6 +30,49 @@ struct RwMatrixTag {
     u32 pad3;
 };
 
+typedef struct BtlAction BtlAction;
+typedef struct BtlCamera BtlCamera;
+
+struct RtQuat {
+    f32 x;
+    f32 y;
+    f32 z;
+    f32 w;
+};
+
+struct BtlAction {
+    u8 _pad00[0x30];
+    BtlUnit* unit;
+};
+
+struct BtlUnit {
+    u8 _pad00[0x1c];
+    RtQuat rot;
+    f32 scale;
+    u8 _pad30[0x5c];
+    f32 unk_8c;
+    f32 sphereRadius;
+};
+
+struct BtlCamera {
+    u8 _pad00[0xb8];
+    f32 fovRad;
+    u8 _padbc[0x24];
+    BtlAction* action;
+};
+
+typedef struct BtlCameraKeyFrame {
+    RwV3d pos;
+    RtQuat rot;
+} BtlCameraKeyFrame;
+
+typedef struct BtlCameraQuatBlend {
+    RtQuat first;
+    RtQuat second;
+    f32 scalar;
+    s32 flag;
+} BtlCameraQuatBlend;
+
 extern void func_001bdeb0();
 extern void func_001c9820(u8 *arg0, s32 arg1, s32 arg2, f32 arg3);
 extern void func_001ce620(u8 *arg0, f32 arg1, f32 arg2, f32 arg3);
@@ -126,6 +169,24 @@ extern f32 D_00607E30[];
 extern f32 D_00607E3C[];
 extern u16 *func_001d0730(s32 arg0, s32 arg1);
 extern RwV3d *func_003dcb40(RwV3d *arg0, const RwV3d *arg1, s32 arg2, const RtQuat *arg3);
+extern void func_00194ff0(void *arg0, void *arg1, void *arg2, void *arg3);
+extern f32 func_001ec2b0(void *arg0, void *arg1);
+extern void func_003dcc70(f32 *arg0, f32 *arg1, void *arg2);
+extern void func_003dc740(f32 *arg0, const f32 *arg1, f32 arg2, s32 arg3);
+extern f32 func_0044b868(f32 arg0);
+extern f32 func_003e41e0(f32 *arg0, f32 *arg1);
+extern f32 fGpffff8118;
+extern f32 fGpffff815c;
+extern f32 fGpffff8054;
+extern f32 fGpffff8058;
+extern f32 fGpffff805c;
+extern f32 fGpffff8060;
+extern f32 fGpffff8108;
+extern f32 fGpffff8180;
+extern f32 fGpffff804c;
+extern f32 fGpffff8160;
+extern f32 fGpffff818c;
+extern f32 DAT_00761200;
 extern void func_001c1040(u8 *arg0, s32 arg1);
 extern void func_001c17a0(u8 *arg0, s32 arg1, s32 arg2);
 extern void func_001c21d0(u8 *arg0, s32 arg1, s32 arg2);
@@ -159,7 +220,112 @@ INCLUDE_ASM("asm/nonmatchings/code1_001c", func_001c04e0);
 // FUN_001C09A0
 void func_001c09a0(void) {}
 // FUN_001C09B0
-INCLUDE_ASM("asm/nonmatchings/code1_001c", func_001c09b0);
+void func_001c09b0(BtlCamera* camera)
+{
+    f32 horiz[2];
+    RwV3d eyeAdj;
+    RwV3d center;
+    RtQuat blended;
+    BtlCameraQuatBlend blend;
+    BtlCameraKeyFrame frames[2];
+    BtlUnit* unit;
+    f32 height;
+    f32 angle;
+    f32 ratio;
+    f32 w1;
+    f32 x;
+    f32 x2;
+    f32 r;
+    f32 r2;
+    f32 dist;
+    f32 sideOffset;
+
+    unit = camera->action->unit;
+    func_001bd560((f32*)&frames[0], (f32*)((u8*)camera + 0x9c));
+    func_00194ff0(unit, &center, 0, 0);
+    height = *(f32 *)((u8 *)unit + 0x84) * unit->scale;
+    height += fGpffff8118 * (unit->unk_8c * unit->scale);
+    center.y = height;
+    eyeAdj = frames[0].pos;
+    eyeAdj.y = height;
+    func_001bd780(&frames[1].rot, &eyeAdj, &center, D_0060A0E0);
+    angle = func_001ec2b0((f32*)&frames[0].rot, (f32*)&frames[1].rot);
+    if (angle > fGpffff815c)
+    {
+        ratio = fGpffff815c / angle;
+        func_003dcc70((f32*)&frames[0].rot, (f32*)&frames[1].rot, (f32*)&blend);
+        if (ratio <= 0.0f)
+        {
+            blended = frames[0].rot;
+        }
+        else if (1.0f <= ratio)
+        {
+            blended = frames[1].rot;
+        }
+        else
+        {
+            w1 = 1.0f - ratio;
+            if (blend.flag == 0)
+            {
+                x = w1 * blend.scalar;
+                x2 = x * x;
+                r = fGpffff8054 + fGpffff8180 * x2;
+                r = fGpffff8058 + x2 * r;
+                r = fGpffff805c + x2 * r;
+                r = fGpffff8060 + x2 * r;
+                r2 = fGpffff8108 + x2 * r;
+                r = x2 * x;
+                w1 = x + r * r2;
+                x = ratio * blend.scalar;
+                x2 = x * x;
+                r = fGpffff8054 + fGpffff8180 * x2;
+                r = fGpffff8058 + x2 * r;
+                r = fGpffff805c + x2 * r;
+                r = fGpffff8060 + x2 * r;
+                r2 = fGpffff8108 + x2 * r;
+                r = x2 * x;
+                ratio = x + r * r2;
+            }
+            blended.x = blend.first.x * w1;
+            blended.y = blend.first.y * w1;
+            blended.z = blend.first.z * w1;
+            blended.x = 0.0f + blended.x + blend.second.x * ratio;
+            blended.y = 0.0f + blended.y + blend.second.y * ratio;
+            blended.z = 0.0f + blended.z + blend.second.z * ratio;
+            blended.w = blend.first.w * w1 + blend.second.w * ratio;
+        }
+        func_003dcb40(&eyeAdj, (const RwV3d *)D_0060A100, 1, &blended);
+        eyeAdj.x = eyeAdj.x + center.x;
+        eyeAdj.y = eyeAdj.y + center.y;
+        eyeAdj.z = eyeAdj.z + center.z;
+        func_001bd780(&frames[1].rot, &eyeAdj, &center, D_0060A0E0);
+    }
+    else if (angle < fGpffff804c)
+    {
+        func_003dc740((f32*)&frames[1].rot, (const f32*)D_0060A0E0, fGpffff8160, 2);
+    }
+    func_003dcb40(&eyeAdj, (const RwV3d *)D_0060A100, 1, &frames[1].rot);
+    dist = 375 / func_0044b868(DAT_00761200 * (0.5f * camera->fovRad));
+    eyeAdj.x = eyeAdj.x * dist;
+    eyeAdj.y = eyeAdj.y * dist;
+    eyeAdj.z = eyeAdj.z * dist;
+    sideOffset = dist * func_0044b868(DAT_00761200 * (0.5f * camera->fovRad));
+    sideOffset = sideOffset * 0.21875f;
+    horiz[0] = eyeAdj.x;
+    horiz[1] = eyeAdj.z;
+    func_003e41e0(horiz, horiz);
+    center.x = 0.0f + center.x + horiz[1] * sideOffset;
+    center.z = 0.0f + center.z - horiz[0] * sideOffset;
+    frames[1].pos.x = center.x + eyeAdj.x;
+    frames[1].pos.y = center.y + eyeAdj.y;
+    frames[1].pos.z = center.z + eyeAdj.z;
+    if (frames[1].pos.y < 25.0f)
+    {
+        frames[1].pos.y = 25.0f;
+    }
+    func_001bac20((u16*)camera, (f32*)&frames[0].pos, (f32*)&frames[1].pos, 1);
+    func_001bbef0((u8*)camera, fGpffff818c);
+}
 // FUN_001C0E40
 void func_001c0e40(void) {}
 // FUN_001C0E50

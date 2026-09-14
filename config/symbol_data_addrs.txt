@@ -162,6 +162,7 @@ D_006364F0 = 0x006364F0; // type:data evidence: retail func_002570f0 copies 9x8 
 D_00636540 = 0x00636540; // type:data evidence: retail func_002570f0 copies 4x8 bytes from it (lui/addiu at 0x00257148) into sp110
 D_00636560 = 0x00636560; // type:data evidence: retail func_002570f0 lq/sq copies it (lui/lq at 0x00257378) into spB0 and spC0
 D_00636570 = 0x00636570; // type:data evidence: retail func_002570f0 lq/sq copies it (lui/lq at 0x00257658) into spA0 and spC0
+fGpffff804c = 0x0076113c; // type:data evidence: GP(0x007690F0) - 0x7FB4; retail gp-relative immediate 0x804c in code1_001c.c func_001c09b0 (verify.py retail_imm)
 D_00761144 = 0x00761144; // type:data evidence: retail func_00372960 lwc1 -0x7FAC($gp) at 0x272B10; word 0xB2D72F34 = -2.50507597e-08f (Taylor coeff)
 D_00761148 = 0x00761148; // type:data evidence: retail func_00372960 lwc1 -0x7FA8($gp) at 0x272B1C; word 0x3638EF1B = 2.75573143e-06f (Taylor coeff)
 D_00761150 = 0x00761150; // type:data evidence: retail func_00372960 lwc1 -0x7FA0($gp) at 0x272B34; word 0x3C088889 = 0.00833333377f (Taylor coeff)
@@ -194,6 +195,9 @@ D_007613A0 = 0x007613A0; // type:data evidence: retail func_00252a60 lwc1 GPREL 
 D_007612CC = 0x007612CC; // type:data evidence: retail func_00252a60 lwc1 GPREL -0x7E24($28); GP base 0x007690F0
 D_007612D0 = 0x007612D0; // type:data evidence: retail func_00252a60 lwc1 GPREL -0x7E20($28); GP base 0x007690F0
 D_0076120C = 0x0076120C; // type:data evidence: retail func_00252a60 lwc1 GPREL -0x7EE4($28); GP base 0x007690F0
+fGpffff8160 = 0x00761250; // type:data evidence: GP(0x007690F0) - 0x7EA0; retail gp-relative immediate 0x8160 in code1_001c.c func_001c09b0 (verify.py retail_imm)
+fGpffff818c = 0x0076127c; // type:data evidence: GP(0x007690F0) - 0x7E74; retail gp-relative immediate 0x818c in code1_001c.c func_001c09b0 (verify.py retail_imm)
+fGpffff8194 = 0x00761284; // type:data evidence: GP(0x007690F0) - 0x7E6C; retail gp-relative immediate 0x8194 in btlCamera.c func_001cde50 (verify.py retail_imm)
 D_00761288 = 0x00761288; // type:data evidence: retail func_00252a60 lwc1 GPREL -0x7E68($28); GP base 0x007690F0
 fGpffff8520 = 0x00761610; // type:data evidence: retail func_002cdf80 lwc1 GPREL -0x7AE0($28) at 0x002D12F4; GP base 0x007690F0 - 0x7AE0 = 0x00761610
 fGpffff8524 = 0x00761614; // type:data evidence: retail func_002cdf80 lwc1 GPREL -0x7ADC($28) at 0x002D140C; GP base 0x007690F0 - 0x7ADC = 0x00761614
