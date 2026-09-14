@@ -322,6 +322,7 @@ void func_004a3010(u8 *arg0)
  * retail saved-register allocation for the replication loop. */
 #pragma push
 #pragma opt_loop_invariants on
+// FUN_004A30E0
 void func_004a30e0(u8 *arg0, u8 *arg1)
 {
     u8 *var_19;
