@@ -1439,7 +1439,9 @@ asm void func_00421c30(void)
 }
 
 // FUN_00421C40
-asm void func_00421c40(void)
+/* measured: the syscall trampoline's return type must be s32 so callers read
+   the syscall result in $v0 (func_0042b480's memory-size compare). */
+asm s32 func_00421c40(void)
 {
     .set noreorder
     .word 0x2403007F /* addiu $v1, $zero, 127 */
@@ -2256,7 +2258,25 @@ asm void func_0042b470(void)
 }
 
 // FUN_0042B480
-INCLUDE_ASM("asm/nonmatchings/code1_0042", func_0042b480);
+/* measured: the P3 twin's two-branch memory-size probe is exact under this TU
+   with schedule on (default-off leaves a nop in the branch delay slot and
+   emits 68B against the 64B window). func_00421c40's syscall return type is
+   s32 so the compare reads $v0. */
+#pragma schedule on
+void func_0042b480(void)
+{
+    extern void func_0042b4c0();
+    u32 size;
+
+    size = func_00421c40();
+    if (size == 0x2000000) {
+        func_0042b4c0();
+        return;
+    }
+    func_00421c50();
+}
+/* measured: closes the function-local scheduling override. */
+#pragma schedule off
 // FUN_0042B4C0
 INCLUDE_ASM("asm/nonmatchings/code1_0042", func_0042b4c0);
 // FUN_0042B6C0

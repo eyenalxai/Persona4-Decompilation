@@ -12,7 +12,6 @@ extern s32 iGpffffaa7c;
 extern s32 iGpffffb618;
 extern s32 func_003b6e70(s32 arg0);
 extern s32 func_003b6e00(s32 arg0);
-extern void func_003b6f00(s32 arg0, u8 *arg1);
 extern s32 iGpffffb6c0;
 extern s32 iGpffffb6c4;
 extern void func_003e18c0(u8 *arg0, void *arg1, s32 arg2);
@@ -127,6 +126,71 @@ extern u64 func_003b88c0(void);
 extern u64 func_003bf1c0(u64 value);
 extern u64 func_003bf1f0(u64 value);
 extern s32 func_003b8d20(void);
+
+/* RenderWare 3.7 rprandom.c, ported from the Persona 3 twin (RpRandomSeed).
+   RANDOMGLOBALS is the rw source's module-globals accessor: the RenderWare
+   block base D_008872E0 plus the module's globalsOffset; the offset itself is
+   also a runtime global, so every multiply re-reads both through the macro. */
+typedef struct RpRandomGlobals {
+    u32 *state; /* 0x00 */
+    u32 *jptr;  /* 0x04 */
+    u32 *kptr;  /* 0x08 */
+    u32 *end;   /* 0x0C */
+} RpRandomGlobals;
+
+#define RANDOMGLOBALS ((RpRandomGlobals *)(D_008872E0 + iGpffffb618))
+
+/* measured: RenderWare 3.7 RpRandomSeed. The body must re-read the module
+   globals through RANDOMGLOBALS on every multiply (the globalsOffset itself is
+   a runtime global), and schedule on is the unit default off. */
+// FUN_003B6F00
+#pragma schedule on
+void func_003b6f00(u32 seed) {
+    s32 j;
+    s32 offset;
+    s32 warmup;
+    u32 *state;
+    RpRandomGlobals *globals;
+
+    j = 1;
+    offset = sizeof(u32);
+    *RANDOMGLOBALS->state = seed;
+
+    do {
+        j += 6;
+        state = (u32 *)((u8 *)RANDOMGLOBALS->state + offset);
+        *state = state[-1] * 0x41c64e6d + 0x3039;
+
+        state = (u32 *)((u8 *)RANDOMGLOBALS->state + offset);
+        state[1] = *state * 0x41c64e6d + 0x3039;
+
+        state = (u32 *)((u8 *)RANDOMGLOBALS->state + offset);
+        state[2] = state[1] * 0x41c64e6d + 0x3039;
+
+        state = (u32 *)((u8 *)RANDOMGLOBALS->state + offset);
+        state[3] = state[2] * 0x41c64e6d + 0x3039;
+
+        state = (u32 *)((u8 *)RANDOMGLOBALS->state + offset);
+        state[4] = state[3] * 0x41c64e6d + 0x3039;
+
+        state = (u32 *)((u8 *)RANDOMGLOBALS->state + offset);
+        offset += 6 * sizeof(u32);
+        state[5] = state[4] * 0x41c64e6d + 0x3039;
+    } while (j < 0x1f);
+
+    warmup = 0;
+    globals = RANDOMGLOBALS;
+    globals->jptr = globals->state + 3;
+    globals->kptr = globals->state;
+
+    do {
+        func_003b7060();
+        warmup++;
+    } while (warmup < 0x136);
+}
+/* measured: closes the schedule bracket; the unit default is off. */
+#pragma schedule off
+
 /* Archived b210 near-miss (R3BB_003b7860); exact under b119 with schedule on. */
 // FUN_003B7860
 #pragma schedule on

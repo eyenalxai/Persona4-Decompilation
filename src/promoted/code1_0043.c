@@ -558,7 +558,15 @@ INCLUDE_ASM("asm/nonmatchings/code1_0043", func_0043b8c8);
 INCLUDE_ASM("asm/nonmatchings/code1_0043", func_0043ba20);
 
 // FUN_0043BB48
-INCLUDE_ASM("asm/nonmatchings/code1_0043", func_0043bb48);
+/* measured: the P3 twin's varargs spill stub is byte-exact under this TU. */
+#pragma schedule on
+void func_0043bb48(int param_1, ...) {
+    volatile char scratch[0x30];
+
+    (void)scratch;
+}
+/* measured: closes the function-local scheduling override. */
+#pragma schedule off
 
 // FUN_0043BB70
 INCLUDE_ASM("asm/nonmatchings/code1_0043", func_0043bb70);

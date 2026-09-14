@@ -355,11 +355,6 @@ s32 func_003b6e00(s32 arg0) {
 /* measured: current-TU archived body object 164B/window 144B, normalized_diff 122; differing word offsets 0,4,6,7,10,11,12,13,14,15,16,17,18,19,22,23,24,25,26,27,28,32,36,40,44,48,52,56,60,64,68,72,76,80,84,88,92,96,100,104,108,112,116,120,124,128,132,136,140,144,148,152,156,160. Object exceeds the retail window, so the archived body was restored immediately. Current mismatch is dominated by frame size/addressing, callback/table materialization, and branch/epilogue layout; prior schedule/O1/reload-preserving-base probes remain ruled out. */
 // FUN_003B6E70 NONMATCHING
 INCLUDE_ASM("asm/nonmatchings/code1_003b", func_003b6e70);
-/* measured: in-file body recheck is object 280B/window 352B with
-   normalized_diff 210, over the park threshold; body archived at
-   build/WS19_003b6f00_nd210.c and restored to INCLUDE_ASM. */
-// FUN_003B6F00
-INCLUDE_ASM("asm/nonmatchings/code1_003b", func_003b6f00);
 /* measured: current-TU archived body object 172B/window 176B, normalized_diff 78; differing offsets 24,28,56,60,64,68,72,76,80,84,88,92,96,100,104,108,112,116,120,124,128,132,136,140,144,148,152,156,160,164. Current body confirms the archived nd30 is stale; global array addressing is correct, while load order, counter/address materialization, signed-compare shape, and branch/return layout remain mismatched; restored fallback. */
 // FUN_003B7060 NONMATCHING
 INCLUDE_ASM("asm/nonmatchings/code1_003b", func_003b7060);
