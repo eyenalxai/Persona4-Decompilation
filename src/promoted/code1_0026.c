@@ -194,7 +194,6 @@ INCLUDE_ASM("asm/nonmatchings/code1_0026", func_00260600);
 INCLUDE_ASM("asm/nonmatchings/code1_0026", func_00260e60);
 // FUN_00261560
 INCLUDE_ASM("asm/nonmatchings/code1_0026", func_00261560);
-// FUN_00262DE0
 #pragma opt_propagation off
 static inline void calendarZeroBytes(void *memory, s32 count)
 {
@@ -209,6 +208,7 @@ static inline void calendarZeroBytes(void *memory, s32 count)
         } while (remaining != 0);
     }
 }
+// FUN_00262DE0
 void func_00262de0(s32 x, s32 y, f32 depth, s32 alpha,
                     s32 date, s32 enabled, f32 scaleX, f32 scaleY,
                     s32 clipLeft, s32 clipRight, s32 fontWord, s32 forceWhite)

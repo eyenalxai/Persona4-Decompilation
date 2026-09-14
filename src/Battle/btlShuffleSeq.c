@@ -514,12 +514,12 @@ s32 func_00379240(u8 *arg0) {
 /* 1192/1200 bytes with eight zero alignment bytes. The comma expression
  * snapshots the random scale before loading the record count, preserving
  * retail's `mul.s $f0,$f0,$f1` operand order. */
-// FUN_00379420
 typedef struct ShufflePair {
     f32 x;
     f32 y;
 } ShufflePair;
 
+// FUN_00379420
 s32 func_00379420(u8 *arg0) {
     s32 *seq;
     s32 i1;

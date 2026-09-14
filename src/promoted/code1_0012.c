@@ -1438,7 +1438,6 @@ void func_00124970(s32 arg0, u32 arg1, s32 arg2, u32 *arg3)
         }
     }
 }
-// FUN_00124BB0
 extern void *func_003e0870(void *m, void *src, f32 angle, s32 mode);
 extern void *func_003e4320(void *dst, void *src, void *m);
 extern void *func_003e0a90(void *m, void *v, s32 mode);
@@ -1458,6 +1457,7 @@ typedef struct {
 /* 956/960 bytes; twenty-five resolved relocations and one zero alignment word. */
 #pragma push
 #pragma opt_propagation off
+// FUN_00124BB0
 void func_00124bb0(s32 arg0,
                    f32 fparg0, f32 fparg1, f32 fparg2, f32 fparg3,
                    f32 fparg4, f32 fparg5,
