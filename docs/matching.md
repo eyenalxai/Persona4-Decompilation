@@ -1367,6 +1367,18 @@ what the residual was. `tools/decomp_lint.py` treats optimization provenance
 as advisory: a valid compiler setting is not itself window filling. Semantic
 equivalence, scoped verification, and correct linkage remain mandatory.
 
+Pragma state is **level-scoped**, which the `schedule` knob does not make
+obvious. Measured on `func_00511dc0` (a two-word store that fills the `jr`
+delay slot only when scheduling is on): `#pragma optimization_level 3` turns
+`schedule` back **on**, and `optimization_level 2` turns it **off**, no matter
+what an earlier `#pragma schedule off` said. A scoped `#pragma schedule on`
+wrapper therefore has to restore what the surrounding *level* implies, not
+what the previous schedule pragma was: closing the wrapper with
+`#pragma schedule off` inside a level-3 region silently unschedules every
+following function until the next `optimization_level`. That cost one landed
+MISMATCH (`func_00511dc0`, 12B against an 8B window) while landing the CRI
+leaf batch; restore with the level pragma, or omit the redundant pair.
+
 ### Second sweep: 60 additional knobs pulled from the b210 binary, zero closures
 
 `tools/knob_sweep.py` referenced above no longer exists in this tree (either lost
@@ -2719,6 +2731,19 @@ so a body that compiles to an 8-byte stub against a 1120-byte window scores
 better than a real attempt. Two apparent `-O3` wins (`func_001dbf20`,
 `func_004667d0`) were exactly this. Always read `object` against `window`
 before believing an nd improvement.
+
+The masked compare has the same blind spot in a sharper form: a relocation
+masks the whole word it sits in, so a *different instruction* at that offset
+is invisible. `func_004cd130`'s draft is the measured case — at
+`optimization_level 3` it lowers to an 8-byte bare tail jump whose `j` word is
+fully masked, against a 24-byte framed-tail-jump window; verify reports MATCH
+because the one compared word matches and everything past the object is not
+compared at all. The body is really ee-gcc's framed tail jump (see "Known
+compiler floors"), so this is a false positive, not a find. Two landable
+examples the batch also produced show the difference: `func_004d2e80`'s
+four-byte tail is alignment padding, while a framed tail jump is missing
+code. The image sha1 stays the final gate — before landing a MATCH whose
+object is shorter than its window, read the retail window to the end.
 
 ### The remaining work is not a toolchain problem
 
